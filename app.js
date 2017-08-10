@@ -58,9 +58,9 @@ app.post('/login', function(req,res) {
           // 회원 가입이 되어 있는 경우.
           if(result[0] != null){
             console.log('로그인 성공', result);
-            var LoginResult = { };
-            LoginResult["resultCode"] = 200;
-            res.json(LoginResult);
+            var BaseResult = { };
+            BaseResult["resultCode"] = 200;
+            res.json(BaseResult);
           }
             // 회원 가입이 안된 경우.  여기서 DB에 넣어주자.
           else {
@@ -225,6 +225,83 @@ app.get('/review', function(req, res){
   });
 });
 
+app.post('/enrollFavorite', function(req,res) {
+  pool.getConnection(function (err, connection) {
+    if(err){
+      console.log(err);
+      connection.release();
+    }
+    else{
+      var userId = req.body.userId;
+      var num = req.body.num;
+
+      var BaseResult = { };
+
+      // 이미 추가한 즐겨찾기인지 체크해주자.
+      var sql = 'select * from favorite where userID = ' + userId + ' and num = ' + num;
+      console.log(sql);
+      connection.query(sql, function(err, result) {
+        if(err){
+          console.log(err);
+          connection.release();
+        }
+        else{
+          // 추가 되어 있는 것이면.
+          if(result[0] != null){
+            console.log('추가되어있음', result);
+            BaseResult["resultCode"] = 2000;
+            res.json(BaseResult);
+          }
+          else{
+            console.log('추가되어있지않음', result);
+            BaseResult["resultCode"] = 200;
+            enrollFavoriteToDB(res, userId, num);
+            res.json(BaseResult);
+          }
+        }
+      });
+    }
+  });
+});
+
+app.post('/enrollBlackList', function(req,res) {
+  pool.getConnection(function (err, connection) {
+    if(err){
+      console.log(err);
+      connection.release();
+    }
+    else{
+      var userId = req.body.userId;
+      var num = req.body.num;
+
+      var BaseResult = { };
+
+      // 이미 추가한 즐겨찾기인지 체크해주자.
+      var sql = 'select * from blacklist where userID = ' + userId + ' and num = ' + num;
+      console.log(sql);
+      connection.query(sql, function(err, result) {
+        if(err){
+          console.log(err);
+          connection.release();
+        }
+        else{
+          // 추가 되어 있는 것이면.
+          if(result[0] != null){
+            console.log('추가되어있음', result);
+            BaseResult["resultCode"] = 2000;
+            res.json(BaseResult);
+          }
+          else{
+            console.log('추가되어있지않음', result);
+            BaseResult["resultCode"] = 200;
+            enrollBlackToDB(res, userId, num);
+          }
+        }
+      });
+    }
+  });
+});
+
 function enrollUserToServer(res, email, userId, nickname, thumbnailImagePath){
   pool.getConnection(function (err, connection) {
     if(err){
@@ -243,9 +320,61 @@ function enrollUserToServer(res, email, userId, nickname, thumbnailImagePath){
         }
         else {
           console.log('result', result);
-          var LoginResult = { };
-          LoginResult["resultCode"] = 200;
-          res.json(LoginResult);
+          var BaseResult = { };
+          BaseResult["resultCode"] = 200;
+          res.json(BaseResult);
+        }
+      });
+    }
+  });
+}
+
+function enrollFavoriteToDB(res, userId, num){
+  pool.getConnection(function (err, connection) {
+    var BaseResult = { };
+
+    if(err){
+      console.log(err);
+      connection.release();
+    }
+    else{
+      var sql = 'insert into favorite values (' + userId + ', ' + num + ')';
+      console.log(sql);
+
+      connection.query(sql, function (err, result) {
+        if(err){
+          console.log(err);
+        }
+        else {
+          console.log('result', result);
+          BaseResult["resultCode"] = 200;
+          res.json(BaseResult);
+        }
+      });
+    }
+  });
+}
+
+function enrollBlackToDB(res, userId, num){
+  pool.getConnection(function (err, connection) {
+    var BaseResult = { };
+
+    if(err){
+      console.log(err);
+      connection.release();
+    }
+    else{
+      var sql = 'insert into blacklist values (' + userId + ', ' + num + ')';
+      console.log(sql);
+
+      connection.query(sql, function (err, result) {
+        if(err){
+          console.log(err);
+        }
+        else {
+          console.log('result', result);
+          BaseResult["resultCode"] = 200;
+          res.json(BaseResult);
         }
       });
     }
