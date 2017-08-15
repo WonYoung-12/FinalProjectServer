@@ -1,16 +1,22 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
+const multer = require('multer');
+const path = require('path');
+const crypto = require('crypto');
+const router = express.Router();
 const mysql = require('mysql');
 const port = 3000;
-app.use(bodyParser.urlencoded({extended:true}));
-app.use(bodyParser.json());
-app.listen(port, function(){
-  console.log('Connected 3000 port!');
-});
+
+app.use(bodyParser.json({limit: "50mb"}));
+app.use(bodyParser.urlencoded({limit: "50mb", extended: true,parameterLimit:50000}));
+app.use('/', router);
+
 app.get('/', function(req, res){
   console.log("테스트");
 });
+
+// const upload = multer({ dest: 'uploads/'});
 // var pool = mysql.createPool({
 //   connectionLimit : 10,
 //   host : 'localhost',
@@ -18,12 +24,14 @@ app.get('/', function(req, res){
 //   password : 'seoul02210',
 //   database : 'boostcamp'
 // })
+
 var db_config = {
   host : 'localhost',
   user : 'root',
   password : 'seoul02210',
   database : 'boostcamp'
 };
+
 var connection;
 function handleDisconnect(){
   connection = mysql.createConnection(db_config);
@@ -44,6 +52,7 @@ function handleDisconnect(){
   });
 }
 handleDisconnect();
+
 //connection.connect();
 app.post('/login', function(req,res) {
   console.log("로그인 뭐가 문젤까");
@@ -94,6 +103,7 @@ app.get('/hospital', function(req, res) {
     }
   });
 });
+
 app.get('/everyHospital', function(req, res){
   console.log("모든 병원 뭐가 문젤까");
   // console.log("테스트다.");
@@ -109,6 +119,7 @@ app.get('/everyHospital', function(req, res){
     }
   });
 });
+
 app.get('/enrollLatLng', function(req, res){
   var num = req.query.num;
   var latitude = req.query.latitude;
@@ -127,6 +138,7 @@ app.get('/enrollLatLng', function(req, res){
     }
   });
 });
+
 app.post('/writeReview', function(req,res) {
   console.log("리뷰 작성 뭐가 문젤까");
   var hospitalNum = req.body.hospitalNum;
@@ -150,6 +162,7 @@ app.post('/writeReview', function(req,res) {
     }
   });
 });
+
 app.get('/review', function(req, res){
   console.log("리뷰 불러오기 문젤까");
   var num = req.query.num;
@@ -173,6 +186,7 @@ app.get('/review', function(req, res){
     }
   });
 });
+
 app.post('/enrollFavorite', function(req,res) {
   console.log("즐찾 추가 뭐가 문젤까");
   var userId = req.body.userId;
@@ -201,6 +215,7 @@ app.post('/enrollFavorite', function(req,res) {
     }
   });
 });
+
 app.post('/enrollBlackList', function(req,res) {
   console.log("블랙 추가 뭐가 문젤까");
   var userId = req.body.userId;
@@ -228,6 +243,7 @@ app.post('/enrollBlackList', function(req,res) {
     }
   });
 });
+
 app.post('/writeChart', function (req, res) {
   console.log("차트작성 뭐가 문젤까");
   var petName = req.body.petName;
@@ -252,6 +268,7 @@ app.post('/writeChart', function (req, res) {
     }
   });
 });
+
 app.post('/enrollPet', function (req, res) {
   console.log("펫 추가 뭐가 문젤까");
   var name = req.body.name;
@@ -273,6 +290,7 @@ app.post('/enrollPet', function (req, res) {
     }
   });
 });
+
 app.post('/changeAlarmSetting', function (req, res) {
   var BaseResult = { };
   var email = req.body.email;
@@ -294,6 +312,7 @@ app.post('/changeAlarmSetting', function (req, res) {
     }
   });
 });
+
 app.get('/getChartList', function (req, res) {
   var userId = req.query.userId;
   var flag = req.query.flag;
@@ -309,6 +328,31 @@ app.get('/getChartList', function (req, res) {
     }
   });
 });
+
+var storage = multer.diskStorage({
+  destination: './uploads',
+  filename: function(req, file, cb) {
+    return crypto.pseudoRandomBytes(16, function(err, raw) {
+      if (err) {
+        console.log(err);
+        return cb(err);
+      }
+      console.log("만들어짐");
+      return cb(null, "" + (raw.toString('hex')) + (path.extname(file.originalname)));
+    });
+  }
+});
+
+var upload = multer({ storage: storage });
+app.use(multer);
+router.post('/addPetImage', upload.single('upload'), function(req, res) {
+  console.log("받아와야지..");
+  console.log(req.file);
+  console.log(req.body);
+  return res.status(204).end();
+});
+
+
 function enrollUserToServer(res, email, userId, nickname, thumbnailImagePath, flag){
   var sql = 'insert into user values ("' + email + '", ' + userId + ', "' + nickname + '", "' + thumbnailImagePath + '", ' + flag + ')';
   console.log('회원 가입하자');
@@ -325,6 +369,7 @@ function enrollUserToServer(res, email, userId, nickname, thumbnailImagePath, fl
     }
   });
 };
+
 function enrollFavoriteToDB(res, userId, num){
   var sql = 'insert into favorite values (' + userId + ', ' + num + ')';
   console.log(sql);
@@ -339,6 +384,7 @@ function enrollFavoriteToDB(res, userId, num){
     }
   });
 };
+
 function enrollBlackToDB(res, userId, num){
   // num은 병원 번호.
   var sql = 'insert into blacklist values (' + userId + ', ' + num + ')';
@@ -363,3 +409,7 @@ function enrollBlackToDB(res, userId, num){
     }
   });
 };
+
+app.listen(port, function(){
+  console.log('Connected 3000 port!');
+});
