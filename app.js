@@ -5,17 +5,18 @@ const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
 const router = express.Router();
+const fs = require('fs');
 const mysql = require('mysql');
 const port = 3000;
 
-app.use(bodyParser.json({limit: "50mb"}));
-app.use(bodyParser.urlencoded({limit: "50mb", extended: true,parameterLimit:50000}));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
+
 app.use('/', router);
 
 app.get('/', function(req, res){
   console.log("테스트");
 });
-
 // const upload = multer({ dest: 'uploads/'});
 // var pool = mysql.createPool({
 //   connectionLimit : 10,
@@ -40,6 +41,8 @@ function handleDisconnect(){
       console.log("error when connecting to db : ", err);
       setTimeout(handleDisconnect, 2000);
     }
+    else{
+    }
   });
   connection.on("error", function(err){
     console.log("db error", err);
@@ -51,9 +54,10 @@ function handleDisconnect(){
     }
   });
 }
-handleDisconnect();
 
+handleDisconnect();
 //connection.connect();
+
 app.post('/login', function(req,res) {
   console.log("로그인 뭐가 문젤까");
   var email = req.body.email;
@@ -275,9 +279,10 @@ app.post('/enrollPet', function (req, res) {
   var age = req.body.age;
   var species = req.body.species;
   var userId = req.body.userId;
+  var flag = req.body.flag
   var BaseResult = { };
   // 이미 추가한 즐겨찾기인지 체크해주자.
-  var sql = 'insert into pet values(' + '"' + name + '", ' + age + ', "' + species + '", ' + userId + ')';
+  var sql = 'insert into pet(name, age, species, userId, flag) values(' + '"' + name + '", ' + age + ', "' + species + '", ' + userId + ', ' + flag + ')';
   // console.log(sql);
   connection.query(sql, function(err, result) {
     if(err){
@@ -329,6 +334,59 @@ app.get('/getChartList', function (req, res) {
   });
 });
 
+app.get('/getPetList', function (req, res) {
+  console.log("펫 리스트가져오자");
+  var userId = req.query.userId;
+  var flag = req.query.flag;
+  var sql = 'select * from pet where userId = ' + userId + ' and flag = ' + flag;
+  //console.log(sql);
+  connection.query(sql, function(err, rows, fields){
+    if(err){
+      console.log(err);
+    }
+    else{
+      // console.log('rows', rows);
+      res.send(rows);
+    }
+  });
+});
+
+app.get('/getPetImage', function (req, res) {
+  console.log("펫 이미지 가져오자");
+  var filePath = req.query.filePath;
+  console.log(filePath);
+
+  fs.exists(filePath, function(exists){
+    if(exists){
+      var readStream = fs.createReadStream(filePath);
+      readStream.pipe(res);
+    }
+    else{
+      res.end("File does Not Exists");
+    }
+  });
+});
+
+app.get('/ratingHospital', function (req, res) {
+  var BaseResult = { };
+  var num = req.query.num;
+  console.log(num);
+  var rating = req.query.rating;
+  console.log(rating);
+  // 우선 가입이 되어있는지 확인 해보자.
+  var sql = 'update hospital set rating_count = rating_count + 1, rating_sum = rating_sum + ' + rating + ", rating_avg = rating_sum/rating_count where num = " + num;
+  console.log(sql);
+  connection.query(sql, function(err, result){
+    if(err){
+      console.log(err);
+    }
+    else{
+      BaseResult["resultCode"] = 200;
+      res.json(BaseResult);
+    }
+  });
+});
+
 var storage = multer.diskStorage({
   destination: './uploads',
   filename: function(req, file, cb) {
@@ -345,13 +403,36 @@ var storage = multer.diskStorage({
 
 var upload = multer({ storage: storage });
 app.use(multer);
+
 router.post('/addPetImage', upload.single('upload'), function(req, res) {
   console.log("받아와야지..");
   console.log(req.file);
+  // console.log("path", req.file.path);
+  // console.log(typeof(imagePath));
   console.log(req.body);
-  return res.status(204).end();
+  var jsonObject = req.body.json;
+  var petString = JSON.parse(jsonObject);
+  var key = Object.keys(petString)[0];
+  var pet = petString[key];
+  var age = pet["age"];
+  var name = pet["name"];
+  var species = pet["species"];
+  var userId = pet["userId"];
+  var imagePath = req.file["path"].replace('\\', '\\\\');
+  console.log(imagePath);
+  var flag = pet["flag"];
+  var sql = 'insert into pet values(' + '"' + name + '", ' + age + ', "' + species + '", ' + userId + ', "' + imagePath + '", ' + flag + ')';
+  // console.log(sql);
+  connection.query(sql, function(err, result) {
+    if(err){
+      console.log(err);
+    }
+    else{
+      // console.log('result', result);
+      return res.status(204).end();
+    }
+  });
 });
-
 
 function enrollUserToServer(res, email, userId, nickname, thumbnailImagePath, flag){
   var sql = 'insert into user values ("' + email + '", ' + userId + ', "' + nickname + '", "' + thumbnailImagePath + '", ' + flag + ')';
