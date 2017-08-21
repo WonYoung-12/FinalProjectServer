@@ -1,4 +1,3 @@
-
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
@@ -106,16 +105,14 @@ app.get('/hospital', function(req, res) {
 
   // console.log("레트로핏 잘 된다");
   var district = req.query.district;
-  // console.log(req.query.district);
+  var sql = 'select num, name, address, tel, latitude, longitude, blackcount, rating_count, rating_sum, rating_avg, imgPath, GROUP_CONCAT(species separator ", ") as species from  hospital left outer join department on hospital.num = department.hospitalNum where address like "%' + district + '%" group by num';
 
-  var sql = 'select * from hospital where address like "%' + district + '%"';
-  // console.log(sql);
   connection.query(sql, function(err, rows, fields){
     if(err){
       console.log(err);
     }
     else{
-      //console.log('rows', rows);
+      // console.log('rows', rows);
       res.send(rows);
     }
   });
@@ -126,7 +123,7 @@ app.get('/getSpecies', function(req, res){
   var num = req.query.num;
 
   var sql = "select species from hospital natural join department where hospital.num = department.hospitalNum and hospital.num = " + num;
-  // console.log("과목 가져오자", sql);
+  console.log("과목 가져오자", sql);
 
   connection.query(sql, function(err, rows, fields){
     if(err){
@@ -272,8 +269,6 @@ app.get('/getFavoriteList', function(req, res){
   var userId = req.query.userId;
   var flag = req.query.flag;
 
-  // select * from hospital natural join favorite where hospital.num = favorite.num and userId = 7835269 and flag = 0;
-  // console.log(num);
   var sql = 'select * from hospital natural join favorite where hospital.num = favorite.num and userId = ' + userId + ' and flag = ' + flag;
 
   connection.query(sql, function(err, result){
@@ -338,8 +333,6 @@ app.get('/getBlackList', function(req, res){
   var userId = req.query.userId;
   var flag = req.query.flag;
 
-  // select * from hospital natural join favorite where hospital.num = favorite.num and userId = 7835269 and flag = 0;
-  // console.log(num);
   var sql = 'select * from hospital natural join black where hospital.num = black.num and userId = ' + userId + ' and flag = ' + flag;
   console.log(sql);
 
@@ -465,7 +458,7 @@ app.get('/getPetList', function (req, res) {
       console.log(err);
     }
     else{
-      console.log('rows', rows);
+      // console.log('rows', rows);
       res.send(rows);
     }
   });
