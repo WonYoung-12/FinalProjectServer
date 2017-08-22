@@ -679,7 +679,7 @@ router.post('/addPetImage', upload.single('upload'), function(req, res) {
 
 
 function enrollUserToServer(res, email, userId, nickname, thumbnailImagePath, flag){
-  var sql = 'insert into user values ("' + email + '", ' + userId + ', "' + nickname + '", "' + thumbnailImagePath + '", ' + flag + ')';
+  var sql = 'insert into user values ("' + email + '", ' + userId + ', "' + nickname + '", "' + thumbnailImagePath + '", ' + flag + ', 0' + ')';
   console.log('회원 가입하자');
   console.log(sql);
 
