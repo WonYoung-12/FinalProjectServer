@@ -381,21 +381,35 @@ app.post('/enrollPet', function (req, res) {
   var age = req.body.age;
   var species = req.body.species;
   var userId = req.body.userId;
+  var imagePath = req.body.imagePath;
   var flag = req.body.flag
 
   var BaseResult = { };
-
-  // 이미 추가한 즐겨찾기인지 체크해주자.
-  var sql = 'insert into pet(name, age, species, userId, flag) values(' + '"' + name + '", ' + age + ', "' + species + '", ' + userId + ', ' + flag + ')';
-  // console.log(sql);
-  connection.query(sql, function(err, result) {
+  var sql = 'select * from pet where name = "' + name + '" and userId = ' + userId + ' and flag = ' + flag;
+  connection.query(sql, function (err, result) {
     if(err){
       console.log(err);
     }
     else{
-      // console.log('result', result);
-      BaseResult["resultCode"] = 200;
-      res.json(BaseResult);
+      // 등록한 펫이 있음.
+      if(result[0] != null){
+          BaseResult["resultCode"] = 300;
+          res.json(BaseResult);
+      }
+      else{
+        var sql = 'insert into pet values(' + '"' + name + '", ' + age + ', "' + species + '", ' + userId + ', "' + imagePath + '", ' + flag + ')';
+        console.log(sql);
+        connection.query(sql, function(err, result) {
+          if(err){
+            console.log(err);
+          }
+          else{
+            // console.log('result', result);
+            BaseResult["resultCode"] = 200;
+            res.json(BaseResult);
+          }
+        });
+      }
     }
   });
 });
