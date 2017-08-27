@@ -445,7 +445,7 @@ app.get('/getChartList', function (req, res) {
   var userId = req.query.userId;
   var flag = req.query.flag;
 
-  var sql = 'select * from chart where userId = ' + userId + ' and flag = ' + flag;
+  var sql = 'select * from chart where userId = ' + userId + ' and flag = ' + flag + ' order by treatmentDate desc';
   //console.log(sql);
 
   connection.query(sql, function(err, rows, fields){
@@ -634,6 +634,48 @@ app.get('/deleteBlack', function (req, res) {
           res.json(BaseResult);
         }
       });
+    }
+  });
+});
+
+app.get('/modifyPet', function (req, res) {
+  var BaseResult = { };
+
+  var petName = req.query.petName;
+  var age = req.query.age;
+  var userId = req.query.userId;
+  var flag = req.query.flag;
+  var imagePath = req.query.imagePath;
+
+  var sql = 'update pet set age = ' + age + ', imagePath = "' + imagePath + '" where name = "' + petName + '" and userId = ' + userId + ' and flag = ' + flag;
+  console.log(sql);
+  connection.query(sql, function(err, result){
+    if(err){
+      console.log(err);
+    }
+    else{
+      BaseResult["resultCode"] = 200;
+      res.json(BaseResult);
+    }
+  });
+});
+
+app.get('/deletePet', function (req, res) {
+  var BaseResult = { };
+
+  var petName = req.query.petName;
+  var userId = req.query.userId;
+  var flag = req.query.flag;
+
+  var sql = 'delete from pet where name = "' + petName + '" and userId = ' + userId + ' and flag = ' + flag;
+  console.log(sql);
+  connection.query(sql, function(err, result){
+    if(err){
+      console.log(err);
+    }
+    else{
+      BaseResult["resultCode"] = 200;
+      res.json(BaseResult);
     }
   });
 });
