@@ -680,6 +680,29 @@ app.get('/deletePet', function (req, res) {
   });
 });
 
+app.get('/getCostAvg', function(req, res){
+  console.log("평균 비용 문젤까");
+
+  var num = req.query.num;
+  // console.log(num);
+  // select avg(cost) from review where hospitalNum = 1;
+
+  var sql = 'select round(avg(cost)) as cost from review where hospitalNum = ' + num;
+  // console.log(sql);
+
+  connection.query(sql, function(err, result){
+    if(err){
+      console.log(err);
+    }
+    else{
+      var CostResult = { };
+      CostResult["resultCode"] = 200;
+      CostResult["cost"] = result[0].cost;
+      res.json(CostResult);
+    }
+  });
+});
+
 var storage = multer.diskStorage({
   destination: './uploads',
   filename: function(req, file, cb) {
